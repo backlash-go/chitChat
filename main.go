@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"gobackend/chitChat/utils"
 	"net/http"
 )
@@ -9,12 +8,16 @@ import (
 func main() {
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", Health)
-	mux.HandleFunc("/login", utils.Login)
-	http.ListenAndServe(":8888", mux)
-}
+	//access static file-server
+	files := http.FileServer(http.Dir("public"))
+	//mux.Handle("/static/", http.StripPrefix("/static/", files))
+	mux.Handle("/", files)
+	//add router relative function
 
-//health check
-func Health(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "go web servers is ok")
+	mux.HandleFunc("/health", utils.Health)
+	mux.HandleFunc("/login", utils.Login)
+	mux.HandleFunc("/index", utils.Index)
+
+	mux.HandleFunc("/authenticate", utils.ValidateUserLogin)
+	http.ListenAndServe(":8080", mux)
 }
