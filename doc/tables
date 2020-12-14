@@ -1,36 +1,36 @@
-CREATE TABLE `hx`.`user` (
+use test;
+CREATE TABLE `test`.`user` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(32) unsigned NOT NULL DEFAULT '0' COMMENT '账号',
+  `name` varchar(32)  NOT NULL DEFAULT '0' COMMENT '账号',
   `password` varchar(32) NOT NULL COMMENT '密码',
   `email` varchar(32) NOT NULL COMMENT '邮箱',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` datetime DEFAULT NULL COMMENT '删除时间',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
-CREATE TABLE `hx`.`threads` (
+CREATE TABLE `test`.`threads` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(32) unsigned NOT NULL DEFAULT '0' COMMENT '用户ID',
+  `user_id` varchar(32)  NOT NULL DEFAULT '0' COMMENT '用户ID',
   `topic` text COMMENT '帖子',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` datetime DEFAULT NULL COMMENT '删除时间',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 
-CREATE TABLE `hx`.`posts` (
+CREATE TABLE `test`.`posts` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(32) unsigned NOT NULL DEFAULT '0' COMMENT '用户ID',
-  `threads_id` varchar(32) unsigned NOT NULL DEFAULT '0' COMMENT '帖子ID',
+  `user_id` varchar(32)  NOT NULL DEFAULT '0' COMMENT '用户ID',
+  `threads_id` varchar(32)  NOT NULL DEFAULT '0' COMMENT '帖子ID',
   `body` text COMMENT '密码',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` datetime DEFAULT NULL COMMENT '删除时间',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
+//测试账号  test01   test01@qq.com   test01

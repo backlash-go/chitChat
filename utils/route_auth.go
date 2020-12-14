@@ -3,11 +3,9 @@ package utils
 import (
 	"fmt"
 	"gobackend/chitChat/data"
-	"gobackend/chitChat/models"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
-	"time"
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -120,19 +118,45 @@ func Health(w http.ResponseWriter, r *http.Request) {
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	creatTime := time.Unix(123213, 0)
-	thread := make([]models.Threads,0,0)
+	threads, err := data.GetThreads()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	cookie, err := r.Cookie("to_chitChat")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	if cookie == nil {
+		generateHTML(w, threads, "layout", "public.navbar", "index")
+	}
+	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
+	userInfo, err := data.GetHashValues(keyFiles)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	data := data.UserInfos{S: userInfo, UserThreads: threads}
 
-	threads := append(thread,models.Threads{ID: 11, Topic: "thread topic", UserId: 222, CreatedAt: &creatTime})
+	if len(userInfo) == 0 {
+		generateHTML(w, threads, "layout", "public.navbar", "index")
+	} else {
+		generateHTML(w, data, "layout", "private.navbar", "index")
+
+	}
 
 	//generateHTML(w, threads, "layout", "private.navbar", "index")
-	generateHTML(w, threads, "layout", "public.navbar", "index")
 }
-
 
 func Err(writer http.ResponseWriter, request *http.Request) {
 	vals := request.URL.Query()
-		//generateHTML(writer, vals.Get("msg"), "layout", "public.navbar", "error")
-		generateHTML(writer, vals.Get("msg"), "layout", "private.navbar", "error")
+	//generateHTML(writer, vals.Get("msg"), "layout", "public.navbar", "error")
+	generateHTML(writer, vals.Get("msg"), "layout", "private.navbar", "error")
 
 }
+
+

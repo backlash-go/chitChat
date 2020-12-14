@@ -72,6 +72,12 @@ func SetKeyTtl(key string, expires int) error {
 	return err
 }
 
+func IsExisted(key string) (int, error) {
+	conn := db.GetRedisPool().Get()
+	defer conn.Close()
+	return redis.Int(conn.Do("EXISTS", key))
+}
+
 func MdSalt(p string) string {
 	salt := []byte("$%*&%99")
 	hashmd := md5.New()
