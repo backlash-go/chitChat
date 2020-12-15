@@ -41,36 +41,16 @@ func ValidateUserLogin(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	cookie, err := r.Cookie("to_chitChat")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
 
-	getKeyFile := []interface{}{cookie.Value, "id", "email", "name"}
-	value, err := data.GetHashValues(getKeyFile)
-	if len(value) == 3 {
-		//todo login success
-		w.WriteHeader(http.StatusOK)
-		s := "登陆成功"
-		w.Write([]byte(s))
-	}
-	if err := r.ParseForm(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
-
+	log.Printf("email is %s and password is %s", email, password)
 	if email == "" || password == "" {
 		w.WriteHeader(40003)
 		s := "账号或者密码错误"
 		w.Write([]byte(s))
 
 	}
-
 	user, err := data.UserIsExisted(email)
 	if err == gorm.ErrRecordNotFound && err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -80,31 +60,29 @@ func ValidateUserLogin(w http.ResponseWriter, r *http.Request) {
 	if data.MdSalt(password) == user.Password {
 		session, _ := data.CreateSession(user)
 		keyFileValue := []interface{}{session.Uuid, "id", session.Id, "email", session.Email, "name", session.Name,}
+		log.Printf("uuid is %s", session.Uuid)
 		err := data.SetHashValues(keyFileValue)
 		if err != nil {
+			log.Println(err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
-
 		if err := data.SetKeyTtl(session.Uuid, 3*3600); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
-
 		cookie := &http.Cookie{
 			Name:     "to_chitChat",
 			Value:    session.Uuid,
 			HttpOnly: true,
 		}
 		http.SetCookie(w, cookie)
-		return
+		http.Redirect(w, r, "/", 302)
+	} else {
+		http.Redirect(w, r, "/login", 302)
 	}
-
-	log.Printf("email is:  %s  password is %s", email, password)
-	fmt.Fprintf(w, "go web servers is ok")
-
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +95,19 @@ func Health(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "go web servers is ok")
 }
 
+func Test(w http.ResponseWriter, r *http.Request) {
+	_, err := r.Cookie("asd")
+	log.Println(err.Error())
+	if err != nil {
+		log.Println(err.Error())
+
+		w.WriteHeader(http.StatusHTTPVersionNotSupported)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	fmt.Fprintf(w, "go web servers is ok")
+}
+
 func Index(w http.ResponseWriter, r *http.Request) {
 	threads, err := data.GetThreads()
 	if err != nil {
@@ -125,16 +116,15 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie, err := r.Cookie("to_chitChat")
+
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	if cookie == nil {
 		generateHTML(w, threads, "layout", "public.navbar", "index")
 	}
+	log.Printf("Index cookie value is %s", cookie.Value)
 	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
 	userInfo, err := data.GetHashValues(keyFiles)
+	log.Printf("userInfo is %s", userInfo)
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -146,7 +136,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		generateHTML(w, threads, "layout", "public.navbar", "index")
 	} else {
 		generateHTML(w, data, "layout", "private.navbar", "index")
-
 	}
 
 	//generateHTML(w, threads, "layout", "private.navbar", "index")
@@ -159,4 +148,44 @@ func Err(writer http.ResponseWriter, request *http.Request) {
 
 }
 
+func Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("to_chitChat")
+	if err != http.ErrNoCookie {
+		http.Redirect(w, r, "/", 302)
+	}
+	if _, err := data.DelHash(cookie.Value); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	http.Redirect(w, r, "/", 302)
 
+}
+
+func NewThread(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	s := "NewThread"
+	w.Write([]byte(s))
+	return
+}
+
+func CreateThread(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	s := "CreateThread"
+	w.Write([]byte(s))
+	return
+}
+
+func PostThread(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	s := "PostThread"
+	w.Write([]byte(s))
+	return
+}
+
+func ReadThread(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	s := "ReadThread"
+	w.Write([]byte(s))
+	return
+}

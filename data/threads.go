@@ -6,6 +6,6 @@ import (
 )
 
 func GetThreads() (threads []models.Threads, err error) {
-	err = db.GetDB().Find(&threads).Error
+	err = db.GetDB().Model(&models.Threads{}).Find(&threads).Error
 	return
 }

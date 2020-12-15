@@ -2,6 +2,7 @@ package db
 
 import (
 	"flag"
+	"fmt"
 	"github.com/spf13/viper"
 	"log"
 )
@@ -18,5 +19,5 @@ func Init()  {
 	dbConf := viper.GetStringMapString("database")
 	InitDB(dbConf["user"], dbConf["password"], dbConf["host"], dbConf["port"], dbConf["name"])
 	dbRedisConf := viper.GetStringMapString("authRedis")
-	InitRedis(dbRedisConf["host"],dbRedisConf["password"],dbRedisConf["db"])
+	InitRedis(fmt.Sprintf("%s:%s", dbRedisConf["host"], dbRedisConf["port"]),dbRedisConf["password"],dbRedisConf["db"])
 }

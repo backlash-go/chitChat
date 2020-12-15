@@ -48,7 +48,7 @@ func CreateUser(name, email, password string) error {
 }
 
 func UserIsExisted(email string) (user models.User, err error) {
-	err = db.GetDB().Where("account = ?", email).First(&user).Error
+	err = db.GetDB().Where("email = ?", email).First(&user).Error
 	return
 }
 
@@ -76,6 +76,12 @@ func IsExisted(key string) (int, error) {
 	conn := db.GetRedisPool().Get()
 	defer conn.Close()
 	return redis.Int(conn.Do("EXISTS", key))
+}
+
+func DelHash(key string) (int, error) {
+	conn := db.GetRedisPool().Get()
+	defer conn.Close()
+	return redis.Int(conn.Do("del", key))
 }
 
 func MdSalt(p string) string {
