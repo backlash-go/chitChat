@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gobackend/chitChat/data"
 	"gorm.io/gorm"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -96,20 +97,23 @@ func Health(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
-	_, err := r.Cookie("asd")
-	log.Println(err.Error())
-	if err != nil {
-		log.Println(err.Error())
-
-		w.WriteHeader(http.StatusHTTPVersionNotSupported)
-		w.Write([]byte(err.Error()))
-		return
+	p := &[]struct {
+		Name string
+		Age  int
+	}{
+		{"longshuai", 22},
+		{"xxb", 33},
 	}
-	fmt.Fprintf(w, "go web servers is ok")
+
+	t1, err := template.ParseFiles("templates/test.html")
+	if err != nil {
+		panic(err)
+	}
+	t1.Execute(w, p)
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	threads, err := data.GetThreads()
+	threadsList, err := data.GetThreads()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -118,24 +122,54 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("to_chitChat")
 
 	if err != nil {
-		generateHTML(w, threads, "layout", "public.navbar", "index")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
 	}
 	log.Printf("Index cookie value is %s", cookie.Value)
 	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
 	userInfo, err := data.GetHashValues(keyFiles)
-	log.Printf("userInfo is %s", userInfo)
+	log.Printf("userInfo is %s len is %d\n", userInfo, len(userInfo))
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	data := data.UserInfos{S: userInfo, UserThreads: threads}
+	userID := make([]uint64, 0, 0)
+	for _, v := range threadsList {
+		userID = append(userID, v.UserId)
+	}
+	user, err := data.SelectUserInfo(userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
-	if len(userInfo) == 0 {
-		generateHTML(w, threads, "layout", "public.navbar", "index")
+	m1 := make(map[uint64]string)
+	for _, va := range user {
+		m1[va.ID] = va.Name
+	}
+
+	items := make([]*data.ThreadInfos, 0, 0)
+	for _, value := range threadsList {
+		items = append(items, &data.ThreadInfos{
+			ID:        value.ID,
+			Topic:     value.Topic,
+			UserId:    value.UserId,
+			UserName:  m1[value.UserId],
+			CreatedAt: value.CreatedAt,
+		})
+	}
+	log.Printf("data is %s", items)
+	log.Printf("threads is %s", items)
+	//log.Printf("threads is %s", threadsInfo[1].Topic)
+
+	if userInfo[0] == "" || userInfo[1] == "" || userInfo[2] == "" {
+		generateHTML(w, items, "layout", "public.navbar", "index")
 	} else {
-		generateHTML(w, data, "layout", "private.navbar", "index")
+		generateHTML(w, items, "layout", "private.navbar", "index")
 	}
 
 	//generateHTML(w, threads, "layout", "private.navbar", "index")
@@ -184,6 +218,9 @@ func PostThread(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReadThread(w http.ResponseWriter, r *http.Request) {
+
+	//generateHTML(w, &thread, "layout", "public.navbar", "public.thread")
+	//generateHTML(w, &thread, "layout", "private.navbar", "private.thread")
 	w.WriteHeader(http.StatusOK)
 	s := "ReadThread"
 	w.Write([]byte(s))

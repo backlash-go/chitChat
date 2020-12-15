@@ -5,16 +5,8 @@
     <title>sd</title>
 </head>
 <body>
-
-<div>test1 for go templates html</div>
-<div>test2 for go templates html</div>
-
-
-
-<form>
-    <input type="radio" name="sex" value="male">Male<br>
-    <input type="radio" name="sex" value="female">Female
-</form>
-
+{{ range . }}
+<div>{{ .Name }} {{ .Age }}</div>
+{{ end }}
 </body>
 </html>

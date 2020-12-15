@@ -15,5 +15,4 @@ type Threads struct {
 //帐号密码登陆验证
 func (m *Threads) TableName() string {
 	return "threads"
-
 }

@@ -4,14 +4,14 @@
 </p>
 
 {{ range . }}
-  <div class="panel panel-default">
+  <div class="  panel-default">
     <div class="panel-heading">
       <span class="lead"> <i class="fa fa-comment-o"></i> {{ .Topic }}</span>
     </div>
     <div class="panel-body">
-      Started by {{ .User.Name }} - {{ .CreatedAtDate }} - {{ .NumReplies }} posts.
+      Started by {{ .UserName }} - {{ .CreatedAt }}
       <div class="pull-right">
-        <a href="/thread/read?id={{.Uuid }}">Read more</a>
+        <a href="/thread/read?id={{.UserId }}">Read more</a>
       </div>
     </div>
   </div>

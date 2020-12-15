@@ -5,7 +5,9 @@ import (
 	"gobackend/chitChat/models"
 )
 
-func GetThreads() (threads []models.Threads, err error) {
-	err = db.GetDB().Model(&models.Threads{}).Find(&threads).Error
+func GetThreads() (ThreadList []*ThreadList, err error) {
+	err = db.GetDB().Model(&models.Threads{}).Scan(&ThreadList).Error
 	return
 }
+
+

@@ -47,6 +47,11 @@ func CreateUser(name, email, password string) error {
 	return err
 }
 
+func SelectUserInfo(userID []uint64) (user []*models.User, err error) {
+	err = db.GetDB().Model(&models.User{}).Where("id = ?", &userID).Find(&user).Error
+	return
+}
+
 func UserIsExisted(email string) (user models.User, err error) {
 	err = db.GetDB().Where("email = ?", email).First(&user).Error
 	return
@@ -83,6 +88,10 @@ func DelHash(key string) (int, error) {
 	defer conn.Close()
 	return redis.Int(conn.Do("del", key))
 }
+
+
+
+
 
 func MdSalt(p string) string {
 	salt := []byte("$%*&%99")
