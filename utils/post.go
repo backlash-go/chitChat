@@ -106,7 +106,7 @@ func PostThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	body := r.PostFormValue("body")
-	userid, _ := strconv.ParseInt(r.PostFormValue("userid"), 10, 64)
+	userid, _ := strconv.ParseInt(userInfo[0], 10, 64)
 	threadId, _ := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
 	log.Printf("body is %s , userid is %d threadId is %d", body, userid, threadId)
 	if err := data.CreatePost(userid, threadId, body); err != nil {
