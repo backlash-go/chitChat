@@ -119,24 +119,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-
 	threadsList, err := data.GetThreads()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	cookie, err := r.Cookie("to_chitChat")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	log.Printf("Index cookie value is %s", cookie.Value)
-	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
-	userInfo, err := data.GetHashValues(keyFiles)
-	log.Printf("userInfo is %s len is %d\n", userInfo, len(userInfo))
-
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -147,7 +130,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	for _, va := range userList {
 		m1[va.ID] = va.Name
 	}
-
 	items := make([]*data.ThreadInfos, 0, 0)
 	for _, value := range threadsList {
 		items = append(items, &data.ThreadInfos{
@@ -158,29 +140,45 @@ func Index(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: value.CreatedAt,
 		})
 	}
-	log.Printf("data is %s", items)
-	log.Printf("threads is %s", items)
-	//log.Printf("threads is %s", threadsInfo[1].Topic)
-
-	if userInfo[0] == "" || userInfo[1] == "" || userInfo[2] == "" {
+	cookie, err := r.Cookie("to_chitChat")
+	if err == http.ErrNoCookie {
+		log.Printf("cookies not found err is %s", err.Error())
 		generateHTML(w, items, "layout", "public.navbar", "index")
-	} else {
-		generateHTML(w, items, "layout", "private.navbar", "index")
+		return
 	}
 
-	//generateHTML(w, threads, "layout", "private.navbar", "index")
+	log.Printf("Index cookie value is %s", cookie.Value)
+	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
+	userInfo, err := data.GetHashValues(keyFiles)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	if userInfo[0] == "" || userInfo[1] == "" || userInfo[2] == "" {
+		generateHTML(w, items, "layout", "public.navbar", "index")
+		return
+	} else {
+		err := data.SetKeyTtl(cookie.Value, 3600)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		generateHTML(w, items, "layout", "private.navbar", "index")
+		return
+	}
 }
 
 func Err(writer http.ResponseWriter, request *http.Request) {
 	vals := request.URL.Query()
-	//generateHTML(writer, vals.Get("msg"), "layout", "public.navbar", "error")
 	generateHTML(writer, vals.Get("msg"), "layout", "private.navbar", "error")
 
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("to_chitChat")
-	if err != http.ErrNoCookie {
+	if err == http.ErrNoCookie {
 		http.Redirect(w, r, "/", 302)
 	}
 	if _, err := data.DelHash(cookie.Value); err != nil {
@@ -188,28 +186,32 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	http.Redirect(w, r, "/", 302)
+	//logout delete client cookies
+	c2 := &http.Cookie{
+		Name:     "to_chitChat",
+		Value:    "https://xueyuanjun.com",
+		HttpOnly: true,
+		MaxAge:   -1, // Cookie 有效期设置为 -1，就会在当前响应发送给客户端后销毁该 Cookie
+	}
+	http.SetCookie(w, c2)
+
+	http.Redirect(w, r, "/login", 302)
 
 }
 
 func NewThread(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("to_chitChat")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+	if err == http.ErrNoCookie {
+		http.Redirect(w, r, "/login", 302)
 		return
 	}
 	log.Printf("PostThread cookie value is %s", cookie.Value)
 	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
 	userInfo, err := data.GetHashValues(keyFiles)
-	log.Printf("userInfo is %s len is %d\n", userInfo, len(userInfo))
 	if userInfo[0] == "" || userInfo[1] == "" || userInfo[2] == "" {
 		http.Redirect(w, r, "/login", 302)
 	}
-
-	generateHTML(w, userInfo[1], "layout", "private.navbar", "new.thread")
-
-	return
+	generateHTML(w, userInfo[0], "layout", "private.navbar", "new.thread")
 }
 
 func CreateThread(w http.ResponseWriter, r *http.Request) {
@@ -219,8 +221,7 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	topic := r.PostFormValue("name")
-
+	topic := r.PostFormValue("topic")
 	err := data.CreateThread(topic, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -228,5 +229,4 @@ func CreateThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/", 302)
-
 }

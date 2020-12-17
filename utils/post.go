@@ -9,22 +9,6 @@ import (
 )
 
 func ReadThread(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("to_chitChat")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	log.Printf("Index cookie value is %s", cookie.Value)
-	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
-	userInfo, err := data.GetHashValues(keyFiles)
-	log.Printf("userInfo is %s len is %d\n", userInfo, len(userInfo))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
 	threadID := r.URL.Query().Get("id")
 	thID, _ := strconv.ParseInt(threadID, 10, 64)
 
@@ -80,9 +64,20 @@ func ReadThread(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: value.CreatedAt,
 		})
 	}
-
-	if userInfo[0] == "" || userInfo[1] == "" || userInfo[2] == "" {
+	cookie, err := r.Cookie("to_chitChat")
+	if err == http.ErrNoCookie {
 		generateHTML(w, item, "layout", "public.navbar", "public.thread")
+		return
+	}
+	log.Printf("readthread cookie value is %s", cookie.Value)
+	uidExisted, err := data.IsExisted(cookie.Value)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	if uidExisted == 0 {
+		http.Redirect(w, r, "/login", 302)
 	} else {
 		generateHTML(w, item, "layout", "private.navbar", "private.thread")
 	}
@@ -113,7 +108,7 @@ func PostThread(w http.ResponseWriter, r *http.Request) {
 	body := r.PostFormValue("body")
 	userid, _ := strconv.ParseInt(r.PostFormValue("userid"), 10, 64)
 	threadId, _ := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
-
+	log.Printf("body is %s , userid is %d threadId is %d", body, userid, threadId)
 	if err := data.CreatePost(userid, threadId, body); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
