@@ -1,7 +1,7 @@
 env: dev
 database:
-  host: 127.0.0.1
-  port: 3307
+  host: 172.18.121.176
+  port: 3306
   user: root
   password: qBs!c27Mqw
   name: test
@@ -11,7 +11,7 @@ database:
 authRedis:
   password: Hexian%!g5tg
   db: 11
-  host: 127.0.0.1 #172.18.214.173:6379
+  host: 172.18.214.173 #172.18.214.173:6379
   port: 6379
 
 
