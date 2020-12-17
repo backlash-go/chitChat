@@ -21,7 +21,7 @@ type User struct {
 }
 
 type Session struct {
-	Id        uint64
+	Id        int64
 	Uuid      string
 	Name      string
 	Email     string
@@ -47,8 +47,14 @@ func CreateUser(name, email, password string) error {
 	return err
 }
 
-func SelectUserInfo(userID []uint64) (user []*models.User, err error) {
-	err = db.GetDB().Model(&models.User{}).Where("id = ?", &userID).Find(&user).Error
+func GetUsers() (UserList []*UserList, err error) {
+	err = db.GetDB().Model(&models.User{}).Scan(&UserList).Error
+	return
+}
+
+func SelectUserInfo(threadID int64) (user *models.User, err error) {
+	user = new(models.User)
+	err = db.GetDB().Model(&models.User{}).Where("id = ?", threadID).First(user).Error
 	return
 }
 

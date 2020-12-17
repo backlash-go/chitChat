@@ -5,7 +5,7 @@ import "time"
 
 //用户表
 type User struct {
-	ID        uint64     `gorm:"column:id" form:"id" json:"id"`
+	ID        int64     `gorm:"column:id" form:"id" json:"id"`
 	Name      string     `gorm:"column:name" form:"name" json:"name"`
 	Password  string     `gorm:"column:password" form:"password" json:"password"`
 	Email     string     `gorm:"column:email", form:"email",json:"email"`

@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +43,6 @@ func ValidateUserLogin(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
 	log.Printf("email is %s and password is %s", email, password)
@@ -113,6 +113,13 @@ func Test(w http.ResponseWriter, r *http.Request) {
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
+	userList, err := data.GetUsers()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	threadsList, err := data.GetThreads()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -120,7 +127,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie, err := r.Cookie("to_chitChat")
-
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -136,19 +142,9 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	userID := make([]uint64, 0, 0)
-	for _, v := range threadsList {
-		userID = append(userID, v.UserId)
-	}
-	user, err := data.SelectUserInfo(userID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
 
-	m1 := make(map[uint64]string)
-	for _, va := range user {
+	m1 := make(map[int64]string)
+	for _, va := range userList {
 		m1[va.ID] = va.Name
 	}
 
@@ -197,32 +193,40 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewThread(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	s := "NewThread"
-	w.Write([]byte(s))
+	cookie, err := r.Cookie("to_chitChat")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	log.Printf("PostThread cookie value is %s", cookie.Value)
+	keyFiles := []interface{}{cookie.Value, "id", "email", "name"}
+	userInfo, err := data.GetHashValues(keyFiles)
+	log.Printf("userInfo is %s len is %d\n", userInfo, len(userInfo))
+	if userInfo[0] == "" || userInfo[1] == "" || userInfo[2] == "" {
+		http.Redirect(w, r, "/login", 302)
+	}
+
+	generateHTML(w, userInfo[1], "layout", "private.navbar", "new.thread")
+
 	return
 }
 
 func CreateThread(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	s := "CreateThread"
-	w.Write([]byte(s))
-	return
-}
+	userId, _ := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
+	if err := r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	topic := r.PostFormValue("name")
 
-func PostThread(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	s := "PostThread"
-	w.Write([]byte(s))
-	return
-}
+	err := data.CreateThread(topic, userId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	http.Redirect(w, r, "/", 302)
 
-func ReadThread(w http.ResponseWriter, r *http.Request) {
-
-	//generateHTML(w, &thread, "layout", "public.navbar", "public.thread")
-	//generateHTML(w, &thread, "layout", "private.navbar", "private.thread")
-	w.WriteHeader(http.StatusOK)
-	s := "ReadThread"
-	w.Write([]byte(s))
-	return
 }
